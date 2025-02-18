@@ -8,7 +8,6 @@ The implementation of an interpreter for fractal, a language for creating and co
 
 
 
-
 ![image](https://github.com/user-attachments/assets/dce5970f-917b-475b-957d-a16021cc9ddb)
 
 
