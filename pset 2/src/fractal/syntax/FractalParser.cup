@@ -1,0 +1,146 @@
+package fractal.syntax;
+
+import java_cup.runtime.*;
+import fractal.values.FractalValue;
+import fractal.values.FractalPoint;
+
+/* Preliminaries to set up and use the scanner. */
+parser code {:
+        FractalLexer lexer;
+
+        public FractalParser(FractalLexer l) {
+            super(l);
+            lexer = l;
+        }
+
+        public void report_error(String message, Object info) {
+            System.err.println(message);
+        }
+
+        public void syntax_error(Symbol cur_token) {
+            System.err.print("Line " + lexer.getLine() +
+                             " near char " + lexer.getChar() + ": ");
+            report_error("Syntax error", cur_token);            
+            System.err.println("Last token read: " + lexer.getText());
+        }
+    :};
+
+/* Terminals (tokens returned by the scanner). */
+// Keywords
+terminal FRACTAL, SELF, END, DRAW, FROM, TO, LET;
+terminal HOME, CLEAR;
+terminal HERE, LINE;
+
+// Special symbols
+terminal SEMI, COLON, LPAREN, RPAREN, CCROT, COMMA;
+
+// Arithmetic operators
+terminal EQUAL, PLUS, MINUS, MUL, DIV, MOD;
+
+// Terminals with values
+terminal Integer INT;
+terminal Double REAL;
+terminal String FRACTAL_ID;
+terminal String POINT_ID;
+terminal String NUM_ID;
+
+// Reserved identifiers for points
+terminal ORIGIN, X_UNIT, Y_UNIT;
+
+/* Non-Terminals */
+non terminal ASTProgram program;
+non terminal ASTStmtSequence stmtList;
+non terminal ASTStatement stmt;
+
+non terminal ASTDefFractal fracDefn;
+non terminal ASTStmtSequence fracBody;
+
+non terminal ASTDrawFractal drawFractal;
+non terminal ASTDrawSelf drawSelf;
+non terminal ASTDrawLine drawLine;
+
+non terminal ASTStmtLet letStmt;
+
+non terminal ASTExp ptExp;
+non terminal ASTExp expression;
+non terminal ASTExp term;
+non terminal ASTExp factor;
+non terminal ASTExp number;
+
+/* Grammar Rules */
+
+program ::= stmtList:statements {: RESULT = new ASTProgram(statements); :};
+
+stmtList ::= stmtList:list stmt:statement {: list.add(statement); RESULT = list; :} |
+             stmt:statement {: RESULT = new ASTStmtSequence(statement); :};
+
+stmt ::= fracDefn:definition {: RESULT = definition; :} |
+         drawFractal:fractal {: RESULT = fractal; :} |
+         drawSelf:self {: RESULT = self; :} |
+         drawLine:line {: RESULT = line; :} |
+         letStmt:let {: RESULT = let; :} |
+         CLEAR {: RESULT = new ASTStmtClear(); :} |
+         HOME {: RESULT = new ASTStmtHome(); :};
+
+fracDefn ::= FRACTAL FRACTAL_ID:name COLON fracBody:body END {: RESULT = new ASTDefFractal(name, body); :};
+
+fracBody ::= stmtList:list {: RESULT = list; :};
+
+drawFractal ::= DRAW FRACTAL_ID:name FROM ptExp:source TO ptExp:destination {: RESULT = new ASTDrawFractal(name, source, destination); :} |
+                DRAW FRACTAL_ID:name TO ptExp:destination {: RESULT = new ASTDrawFractal(name, destination); :};
+
+drawSelf ::= DRAW SELF FROM ptExp:source TO ptExp:destination {: RESULT = new ASTDrawSelf(source, destination); :} |
+             DRAW SELF TO ptExp:destination {: RESULT = new ASTDrawSelf(destination); :};
+
+drawLine ::= DRAW LINE FROM ptExp:source TO ptExp:destination {: RESULT = new ASTDrawLine(source, destination); :} |
+             DRAW LINE TO ptExp:destination {: RESULT = new ASTDrawLine(destination); :};
+
+letStmt ::= LET POINT_ID:name EQUAL ptExp:expression {: RESULT = new ASTStmtLet(name, expression); :} |
+            LET NUM_ID:name EQUAL expression:expression {: RESULT = new ASTStmtLet(name, expression); :};
+
+ptExp ::= ptExp:left PLUS term:right {: 
+                RESULT = new ASTExpAdd(left, right); 
+            :} |
+          ptExp:left MINUS term:right {: 
+                RESULT = new ASTExpSub(left, right); 
+            :} |
+          term:single {: 
+                RESULT = single; 
+            :};
+
+term ::= term:left MUL factor:right {: RESULT = new ASTExpMul(left, right); :} |
+         term:left DIV factor:right {: RESULT = new ASTExpDiv(left, right); :} |
+         factor:single {: RESULT = single; :};
+
+factor ::= MINUS factor:negative {: RESULT = new ASTExpNegate(negative); :} |
+           LPAREN ptExp:expression RPAREN {: RESULT = expression; :} |
+           CCROT LPAREN expression:angle RPAREN {: RESULT = new ASTExpPtCCRot(angle); :} |
+           number:value {: RESULT = value; :};
+
+number ::= INT:value X_UNIT {: 
+               RESULT = new ASTExpLit(FractalValue.make(
+                   FractalPoint.X_UNIT.scale((float) value).getX(),
+                   FractalPoint.X_UNIT.scale((float) value).getY())); 
+           :} |
+           REAL:value X_UNIT {: 
+               RESULT = new ASTExpLit(FractalValue.make(
+                   FractalPoint.X_UNIT.scale(value.floatValue()).getX(),
+                   FractalPoint.X_UNIT.scale(value.floatValue()).getY())); 
+           :} |
+           INT:value Y_UNIT {: 
+               RESULT = new ASTExpLit(FractalValue.make(
+                   FractalPoint.Y_UNIT.scale((float) value).getX(),
+                   FractalPoint.Y_UNIT.scale((float) value).getY())); 
+           :} |
+           REAL:value Y_UNIT {: 
+               RESULT = new ASTExpLit(FractalValue.make(
+                   FractalPoint.Y_UNIT.scale(value.floatValue()).getX(),
+                   FractalPoint.Y_UNIT.scale(value.floatValue()).getY())); 
+           :} |
+           INT:value {: RESULT = new ASTExpLit(FractalValue.make(value)); :} |
+           REAL:value {: RESULT = new ASTExpLit(FractalValue.make(value)); :} |
+           POINT_ID:identifier {: RESULT = new ASTExpPtVar(identifier); :} |
+           HERE {: RESULT = new ASTExpHere(); :} |
+           ORIGIN {: RESULT = new ASTExpLit(FractalPoint.ORIGIN); :} |
+           X_UNIT {: RESULT = new ASTExpLit(FractalPoint.X_UNIT); :} |
+           Y_UNIT {: RESULT = new ASTExpLit(FractalPoint.Y_UNIT); :};

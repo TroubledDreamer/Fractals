@@ -1,0 +1,6 @@
+// Fractal v3.0 (2024) definition of the Gosper C curve
+
+fractal gosper4:
+   draw self from O to 0.5X + 0.5Y
+   draw self from 0.5X + 0.5Y to X
+end

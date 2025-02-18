@@ -1,0 +1,10 @@
+// Fractal definition of the Koch curve
+
+fractal koch1:
+  draw self to 0.333333 X
+  draw self to 0.333333 X + 0.333333 @60
+  draw self to 0.666667 X
+  draw self to X
+  end
+
+// draw koch1 from O to 5X

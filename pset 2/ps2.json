@@ -1,0 +1,22 @@
+{
+    "expected_paths" : ["pset/src/",
+			"pset/src/fractal/",
+			"pset/src/fractal/syntax/",
+			"pset/src/fractal/semantics/",
+			"pset/src/fractal/sys/",
+			"pset/src/fractal/values/",
+			"pset/examples/",
+			"pset/tests/"],
+
+    "required" : ["pset/src/fractal/syntax/FractalLexer.jflex",
+		  "pset/src/fractal/syntax/FractalParser.cup",
+		  "pset/src/fractal/semantics/Visitor.java",
+		  "pset/src/fractal/semantics/FractalEvaluator.java"
+		 ],
+
+    "preferred" : ["pset/src/fractal/semantics/Environment.java",
+		   "pset/src/fractal/semantics/FractalState.java",
+		   "pset/tests"],
+
+    "optional" : ["pset/src/fractal/sys/Repl.java", "pset/examples"]
+}

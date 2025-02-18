@@ -1,0 +1,8 @@
+// Fractal v3.0 (2024) definition of the Gosper C curve
+
+fractal gosper2:
+   draw self to (X + Y)/2
+   draw self to X
+end
+
+// draw gosper2 from -5 X to 5 X
